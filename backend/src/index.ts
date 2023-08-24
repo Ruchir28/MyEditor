@@ -15,7 +15,6 @@ app.use(cors());
 // Setting up Multer storage to store files in /uploads directory
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    console.log("[DEBUG-1]",req.body);
     let fileName = req.body.filename.split('.')[0];
     let destinationPath = `uploads/${fileName}`;
     if (!fs.existsSync(destinationPath)) {
@@ -25,8 +24,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, `${req.body.chunkNumber}.blob`);
-  },
-
+  }
 });
 
 const upload = multer({ storage });
@@ -36,8 +34,6 @@ app.post('/upload', upload.single('fileChunk'), (req: Request, res: Response) =>
   if (!req.file) {
     return res.status(400).send("No file uploaded.");
   }
-
-  console.log(req.body);
 
   const { originalname } = req.file;
   
@@ -56,22 +52,45 @@ app.post('/upload', upload.single('fileChunk'), (req: Request, res: Response) =>
 
   // Check if all chunks have been received
   if (fs.readdirSync(dirPath).length === parseInt(totalChunks)) {
-    let finalFilePath = path.join(__dirname, 'completed', req.body.filename);
+    const finalFilePath = path.join(__dirname, 'completed', req.body.filename);
+    
     if (!fs.existsSync(path.join(__dirname, 'completed'))) {
       fs.mkdirSync(path.join(__dirname, 'completed'));
     }
+  
     const fileStream = fs.createWriteStream(finalFilePath);
+  
+    let i = 1; 
+  
+    function writeChunk() {
 
-    for (let i = 1; i <= parseInt(totalChunks); i++) {
-      const chunkData = fs.readFileSync(path.join(dirPath, `${i}.chunk`));
-      fileStream.write(chunkData);
-      fs.unlinkSync(path.join(dirPath, `${i}.chunk`)); // Deleting chunk after writing to final file
+      console.log(`[DEBUG] write chunk called, i = ${i}`);
+
+      let continueWriting = true;
+  
+      while (continueWriting && i <= parseInt(totalChunks)) {
+        const chunkData = fs.readFileSync(path.join(dirPath, `${i}.chunk`));
+        // If write returns false, we should stop writing until drain event is fired.
+        if (!fileStream.write(chunkData)) {
+          console.log(`[DEBUG] HERE, cannot write data now`,i);
+          continueWriting = false;
+        } 
+        fs.unlinkSync(path.join(dirPath, `${i}.chunk`));
+        i++;
+      }
+  
+      if (i > parseInt(totalChunks)) {
+        console.log("[DEBUG] END OF WRITING PHASE");
+        fileStream.end();
+        fs.rmdirSync(dirPath);
+      }
     }
-
-    fileStream.end();
-    fs.rmdirSync(dirPath); // Delete the directory for chunks
+  
+    fileStream.on('drain', writeChunk);
+    
+    writeChunk();
   }
-
+  
   res.send('Chunk received');
 });
 
