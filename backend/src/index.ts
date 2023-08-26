@@ -16,18 +16,20 @@ app.use(cors());
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let fileName = req.body.filename.split('.')[0];
-    let destinationPath = `uploads/${fileName}`;
-    if (!fs.existsSync(destinationPath)) {
-        fs.mkdirSync(destinationPath, { recursive: true }); // recursive ensures parent directories are created if they don't exist
+    const dirPath = path.join(__dirname, `/uploads/${fileName}`);
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true }); // recursive ensures parent directories are created if they don't exist
     }
-    cb(null,`uploads/${fileName}`);
+    cb(null,dirPath);
   },
   filename: (req, file, cb) => {
-    cb(null, `${req.body.chunkNumber}.blob`);
+    cb(null, `${req.body.chunkNumber}.chunk`);
   }
 });
 
 const upload = multer({ storage });
+
+const processingChunks: Record<string, Set<number>> = {};
 
 app.post('/upload', upload.single('fileChunk'), (req: Request, res: Response) => {
   
@@ -41,17 +43,15 @@ app.post('/upload', upload.single('fileChunk'), (req: Request, res: Response) =>
   const fileName = req.body.filename.split('.')[0];
 
   console.log(req.file.path);
+  
+  processingChunks[fileName] = processingChunks[fileName] || new Set();
+
+  processingChunks[fileName].add(parseInt(chunkNumber));
 
   const dirPath = path.join(__dirname, `/uploads/${fileName}`);
 
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath);
-  }
-
-  fs.renameSync(req.file.path, path.join(dirPath, `${chunkNumber}.chunk`));
-
   // Check if all chunks have been received
-  if (fs.readdirSync(dirPath).length === parseInt(totalChunks)) {
+  if (processingChunks[fileName].size === parseInt(totalChunks)) {
     const finalFilePath = path.join(__dirname, 'completed', req.body.filename);
     
     if (!fs.existsSync(path.join(__dirname, 'completed'))) {
@@ -83,6 +83,7 @@ app.post('/upload', upload.single('fileChunk'), (req: Request, res: Response) =>
         console.log("[DEBUG] END OF WRITING PHASE");
         fileStream.end();
         fs.rmdirSync(dirPath);
+        delete processingChunks[fileName];
       }
     }
   
