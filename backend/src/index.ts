@@ -1,11 +1,14 @@
-import express, { Request, Response } from 'express';
-import multer, { FileFilterCallback } from 'multer';
-import cors from 'cors';
-import fs from 'fs';
-import path from 'path';
-import bodyParser from 'body-parser';
-import {UploadChunkResponse} from './Common';
-
+import express, { Request, Response } from "express";
+import multer, { FileFilterCallback } from "multer";
+import cors from "cors";
+import fs from "fs";
+import path from "path";
+import bodyParser from "body-parser";
+import { pipeline } from 'stream';
+import { promisify } from 'util';
+const pipe = promisify(pipeline);
+import { UploadChunkResponse } from "./Common";
+require('events').EventEmitter.defaultMaxListeners = 100;  // Or another appropriate number
 
 const app = express();
 const port = 8000;
@@ -13,106 +16,135 @@ const port = 8000;
 app.use(cors());
 
 
+function formatTime() {
+  const now = new Date();
+  
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+
+  return `[${hours}]-[${minutes}]-[${seconds}]-[${milliseconds}]`;
+}
+
+
+function debug(msg: String) {
+  console.log(`[DEBUG] [SERVER] ${formatTime()} + ${msg}`)
+}
+
+
 // Setting up Multer storage to store files in /uploads directory
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let fileName = req.body.filename.split('.')[0];
+    let fileName = req.body.filename.split(".")[0];
     const dirPath = path.join(__dirname, `/uploads/${fileName}`);
     if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true }); // recursive ensures parent directories are created if they don't exist
+      fs.mkdirSync(dirPath, { recursive: true }); // recursive ensures parent directories are created if they don't exist
     }
-    cb(null,dirPath);
+    cb(null, dirPath);
   },
   filename: (req, file, cb) => {
     cb(null, `${req.body.chunkNumber}.chunk`);
-  }
+  },
 });
 
 const upload = multer({ storage });
 
 const processingChunks: Record<string, Set<number>> = {};
 
-app.post('/upload', upload.single('fileChunk'), (req: Request, res: Response) => {
-  let response: UploadChunkResponse = {
-    chunkId: req.body.chunkNumber,
-    uploadStatus: true,
-  };
+app.post(
+  "/upload",
+  upload.single("fileChunk"),
+  (req: Request, res: Response) => {
+    let response: UploadChunkResponse = {
+      chunkId: req.body.chunkNumber,
+      uploadStatus: true,
+    };
 
-  console.log(`[DEBUG] req.body = ${JSON.stringify(req.body)}`);
+    debug(`req.body = ${JSON.stringify(req.body)}`);
 
-  // randonly return 500 error for testing 
-  // if (Math.random() < 0.1) {
-  //   return res.status(500).json({
-  //     message: "Internal server error",
-  //     ...response,
-  //   });
-  // }
-
-
-  if (!req.file) {
-    return res.status(400).json({
-      message: "No file uploaded",
-      ...response,
-    });
-  }
-
-  const { originalname } = req.file;
-
-  const { totalChunks, chunkNumber } = req.body;
-  const fileName = req.body.filename.split(".")[0];
-
-  console.log(req.file.path);
-
-  processingChunks[fileName] = processingChunks[fileName] || new Set();
-
-  processingChunks[fileName].add(parseInt(chunkNumber));
-
-  const dirPath = path.join(__dirname, `/uploads/${fileName}`);
-
-  // Check if all chunks have been received
-  if (processingChunks[fileName].size === parseInt(totalChunks)) {
-    const finalFilePath = path.join(__dirname, "completed", req.body.filename);
-
-    if (!fs.existsSync(path.join(__dirname, "completed"))) {
-      fs.mkdirSync(path.join(__dirname, "completed"));
+    if (!req.file) {
+      return res.status(400).json({
+        message: "No file uploaded",
+        ...response,
+      });
     }
 
-    const fileStream = fs.createWriteStream(finalFilePath);
+    const { originalname } = req.file;
 
-    let i = 1;
+    const { totalChunks, chunkNumber } = req.body;
+    const fileName = req.body.filename.split(".")[0];
 
-    function writeChunk() {
-      console.log(`[DEBUG] write chunk called, i = ${i}`);
+    debug(req.file.path);
 
-      let continueWriting = true;
+    processingChunks[fileName] = processingChunks[fileName] || new Set();
 
-      while (continueWriting && i <= parseInt(totalChunks)) {
-        const chunkData = fs.readFileSync(path.join(dirPath, `${i}.chunk`));
-        // If write returns false, we should stop writing until drain event is fired.
-        if (!fileStream.write(chunkData)) {
-          console.log(`[DEBUG] HERE, cannot write data now`, i);
-          continueWriting = false;
+    processingChunks[fileName].add(parseInt(chunkNumber));
+
+    const dirPath = path.join(__dirname, `/uploads/${fileName}`);
+
+    // Check if all chunks have been received
+    if (processingChunks[fileName].size === parseInt(totalChunks)) {
+      const finalFilePath = path.join(
+        __dirname,
+        "completed",
+        req.body.filename
+      );
+
+      if (!fs.existsSync(path.join(__dirname, "completed"))) {
+        fs.mkdirSync(path.join(__dirname, "completed"));
+      }
+
+      const fileStream = fs.createWriteStream(finalFilePath);
+
+      let i = 1;
+
+      let isWriting = false;
+      debug(isWriting ? "true" : "false");
+
+      async function writeChunk() {
+        debug(` Entering Write Chunk for, i = ${i}, ${isWriting}`);
+        if(isWriting){return;}
+        debug(` write chunk called, i = ${i}`);
+
+        isWriting = true;
+        
+        let continueWriting = true;
+  
+        while (continueWriting && i <= parseInt(totalChunks)) {
+          const chunkData = await fs.promises.readFile(path.join(dirPath, `${i}.chunk`));
+          // If write returns false, we should stop writing until drain event is fired.
+          if (!fileStream.write(chunkData)) {
+            debug(`HERE, cannot write data now ${i}`);
+            continueWriting = false;
+          }
+          await fs.promises.unlink((path.join(dirPath, `${i}.chunk`)));
+          i++;
         }
-        fs.unlinkSync(path.join(dirPath, `${i}.chunk`));
-        i++;
-      }
 
-      if (i > parseInt(totalChunks)) {
-        console.log("[DEBUG] END OF WRITING PHASE");
-        fileStream.end();
-        fs.rmdirSync(dirPath);
-        delete processingChunks[fileName];
+        isWriting = false;
+  
+        if (i > parseInt(totalChunks)) {
+          debug("END OF WRITING PHASE");
+          fileStream.end();
+          await fs.promises.rmdir(dirPath);
+          delete processingChunks[fileName];
+        } else {
+          debug("Calling WriteChunk for next iteration");
+          writeChunk();
+        }
+        debug(`Exiting writeChunk, i = ${i - 1}`); 
       }
+  
+      fileStream.on("drain", writeChunk);
+    
+      writeChunk();
     }
-
-    fileStream.on("drain", writeChunk);
-
-    writeChunk();
+    debug(`resposne = ${JSON.stringify(response)}`);
+    return res.status(200).json(response);
   }
-  console.log(`[DEBUG SERVER] resposne = ${JSON.stringify(response)}`);
-  return res.status(200).json(response);
-});
+);
 
 app.listen(port, () => {
-  console.log(`Server started on http://localhost:${port}`);
+  debug(`Server started on http://localhost:${port}`);
 });
