@@ -3,35 +3,29 @@ export interface UploadChunkResponse {
     uploadStatus: boolean;
     message?: string;
 }
-
-export enum UserType {
+export declare enum UserType {
     OWNER = "OWNER",
     EDITOR = "EDITOR"
 }
-
-export enum RequestStatus {
+export declare enum RequestStatus {
     SUCCESS = "SUCCESS",
     FAILURE = "FAILURE"
 }
-
 export interface RegisterUserRequest {
     email: string;
     password: string;
     username: string;
     userType: UserType;
 }
-
 export interface RegisterUserResponse {
     status: RequestStatus;
     message?: string;
     userId?: number;
 }
-
 export interface LoginUserRequest {
     email: string;
     password: string;
 }
-
 export interface LoginUserResponse {
     status: RequestStatus;
     message: string;

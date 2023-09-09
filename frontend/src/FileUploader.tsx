@@ -54,7 +54,7 @@ const FileUploader: React.FC = () => {
           formData.append("chunkNumber", (i + 1).toString());
           formData.append("totalChunks", totalChunks.toString());
           formData.append("fileChunk", chunk);
-
+          await delay(1);
           const uploadPromise = uploadChunkPromise(formData, i + 1, totalChunks, file.name);
        
           uploadPromises.push(uploadPromise);
@@ -112,6 +112,12 @@ const FileUploader: React.FC = () => {
     setSingleChunk((prev) => !prev);
   }
 
+  function delay(seconds: number) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, seconds * 1000);
+    });
+  }
+
   return (
     <div>
       <input
@@ -129,3 +135,5 @@ const FileUploader: React.FC = () => {
 };
 
 export default FileUploader;
+
+

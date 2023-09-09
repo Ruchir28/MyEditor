@@ -1,5 +1,6 @@
 import React from 'react';
 import FileUploader from './FileUploader';
+import VideoPlayer from './VideoPlayer';
 
 function App() {
   return (
@@ -7,6 +8,7 @@ function App() {
       
       <h1>File Uploader</h1>
       <FileUploader></FileUploader>
+      <VideoPlayer></VideoPlayer>
     </div>
   );
 }

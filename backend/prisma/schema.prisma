@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  type      UserType  @default(EDITOR) // Either OWNER or EDITOR
+  encrytped_password String // This is the hashed password
+  videos    Video[]   // This establishes a one-to-many relation from User to Video
+  comments  Comment[] // This establishes a one-to-many relation from User to Comment
+}
+
+model Video {
+  id          Int       @id @default(autoincrement())
+  title       String
+  path        String    // This could be the file path or URL to the video
+  ownerId     Int       // Foreign key to the User model
+  owner       User      @relation(fields: [ownerId], references: [id]) // This is where the relationship is established
+  assignments Assignment[] // One-to-many relation from Video to Assignment
+}
+
+model Assignment {
+  id        Int    @id @default(autoincrement())
+  title     String
+  status    Status @default(PENDING) // Example statuses: PENDING, REVIEWING, DONE
+  videoId   Int
+  video     Video  @relation(fields: [videoId], references: [id])
+  comments  Comment[] // One-to-many relation from Assignment to Comment
+}
+
+model Comment {
+  id           Int       @id @default(autoincrement())
+  content      String
+  timestamp    Int       // This could represent the timestamp in the video where the comment is added
+  assignmentId Int
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  // add a reference to the user who created the comment
+  userId       Int // user who created the comment
+  user         User @relation(fields: [userId], references: [id])
+  parentCommentId Int? // This is the ID of the parent comment
+  parentComment   Comment? @relation("ChildComment", fields: [parentCommentId], references: [id])
+  childComments   Comment[] @relation("ChildComment")
+}
+
+enum UserType {
+  OWNER
+  EDITOR
+}
+
+enum Status {
+  PENDING
+  REVIEW
+  DONE
+}
