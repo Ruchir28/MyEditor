@@ -32,3 +32,14 @@ export interface LoginUserResponse {
     userId?: number;
     jwtToken?: string;
 }
+export interface CreateAssignmentRequest {
+    title: string;
+    videoId?: number;
+    reporterId: number;
+    assigneeId?: number;
+}
+export interface CreateAssignmentResponse {
+    status: RequestStatus;
+    message?: string;
+    assignmentId?: number;
+}

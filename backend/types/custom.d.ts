@@ -1,10 +1,9 @@
 import { Request } from 'express';
 import { UserType } from '@ruchir28/common';
 
-interface User {
+export interface User {
     id: number;
     email: string;
-    type: UserType;
 }
 
 declare module 'express' {

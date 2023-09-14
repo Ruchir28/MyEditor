@@ -5,7 +5,6 @@ import {
   RequestStatus,
   LoginUserRequest,
   LoginUserResponse,
-  UserType
 } from "@ruchir28/common";
 
 import bcrypt from "bcrypt";
@@ -29,7 +28,6 @@ export async function registerUser(
         email: request.email,
         encrytped_password: encrytped_password,
         name: request.username,
-        type: $Enums.UserType[request.userType],
       },
     });
     return res.status(200).json({
@@ -117,7 +115,6 @@ export async function verifyUserMiddleware(req: express.Request, res: express.Re
     req.user = {
       id: user.id,
       email: user.email,
-      type: UserType[user.type]
     };
     next(); 
   }catch(error){
