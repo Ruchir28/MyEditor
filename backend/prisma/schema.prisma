@@ -33,7 +33,7 @@ model Video {
 model Assignment {
   id        Int    @id @default(autoincrement())
   title     String
-  status    Status @default(PENDING) // Example statuses: PENDING, REVIEWING, DONE
+  status    Status @default(OPEN) // Example statuses: PENDING, REVIEWING, DONE
   reporterId Int // This is the ID of the user who reported the assignment
   reporter   User @relation("reporter",fields: [reporterId], references: [id])
   assigneeId Int? // This is the ID of the user who is assigned to the assignment
@@ -54,7 +54,7 @@ model AssignmentVideoVersion {
 model Comment {
   id           Int       @id @default(autoincrement())
   content      String
-  timestamp    Int       // This could represent the timestamp in the video where the comment is added
+  timestamp    DateTime  @default(now())       // This could represent the timestamp in the video where the comment is added
   userId       Int // user who created the comment
   user         User @relation(fields: [userId], references: [id])
   videoVersionId Int // This is the ID of the video version that this comment is associated with
@@ -62,7 +62,9 @@ model Comment {
 }
 
 enum Status {
-  PENDING
+  OPEN
+  IN_PROGRESS
   REVIEW
   DONE
+  CANCELLED
 }

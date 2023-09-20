@@ -3,7 +3,7 @@ import { UploadChunkResponse } from "../../common/Common";
 
 const CHUNK_SIZE = 200 * 1024 * 1024; // 5MB chunks
 
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = "http://localhost:8000/video";
 
 const FileUploader: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RequestStatus = exports.UserType = void 0;
+exports.AssignmentStatus = exports.RequestStatus = exports.UserType = void 0;
 var UserType;
 (function (UserType) {
     UserType["OWNER"] = "OWNER";
@@ -11,3 +11,11 @@ var RequestStatus;
     RequestStatus["SUCCESS"] = "SUCCESS";
     RequestStatus["FAILURE"] = "FAILURE";
 })(RequestStatus || (exports.RequestStatus = RequestStatus = {}));
+var AssignmentStatus;
+(function (AssignmentStatus) {
+    AssignmentStatus["OPEN"] = "OPEN";
+    AssignmentStatus["IN_PROGRESS"] = "IN_PROGRESS";
+    AssignmentStatus["REVIEW"] = "REVIEW";
+    AssignmentStatus["DONE"] = "DONE";
+    AssignmentStatus["CANCELLED"] = "CANCELLED";
+})(AssignmentStatus || (exports.AssignmentStatus = AssignmentStatus = {}));

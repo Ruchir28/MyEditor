@@ -1,5 +1,5 @@
 {
     "execMap": {
-        "ts" : "tsc && node ./dist/backend/src/index.js"
+        "ts" : "tsc && node ./dist/index.js"
     }
 }

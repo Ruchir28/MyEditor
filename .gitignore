@@ -8,6 +8,7 @@ backend/package-lock.json
 backend/dist/
 backend/yarn.lock
 backend/.env
+backend/completed/*
 
 # Compiled files
 *.log
