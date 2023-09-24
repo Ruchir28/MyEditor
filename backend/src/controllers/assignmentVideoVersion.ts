@@ -4,9 +4,9 @@ import {
   AddVideoVersionToAssignmentRequest,
   RequestStatus,
   AddCommentToVideoVersion,
+  AddVideoVersionToAssignmentResponse,
 } from "@ruchir28/common";
-
-const primsaClient = new PrismaClient();
+import {primsaClient} from '../Utils/prismaClient'
 
 export async function addVideoVersionToAssignment(
   req: express.Request,
@@ -36,6 +36,20 @@ export async function addVideoVersionToAssignment(
       });
     }
     //TODO: Check if video is owned by person who is adding video version
+    let video = await primsaClient.video.findUnique({
+      where: {
+        id: request.videoId,
+      },
+    });
+    if (!video) {
+      throw new Error("Video not found");
+    }
+    if(video?.ownerId !== user.id) {
+      return res.status(401).json({
+        status: RequestStatus.FAILURE,
+        message: "User not authorized to add video version to this assignment",
+      });
+    }
 
     const videoVersion = await primsaClient.assignmentVideoVersion.create({
       data: {

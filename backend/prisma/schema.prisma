@@ -19,6 +19,7 @@ model User {
   comments  Comment[] // This establishes a one-to-many relation from User to Comment
   assignmentsReported    Assignment[]  @relation("reporter")
   assignmentsAssignedTo  Assignment[]  @relation("assignee")
+  viewableVideos Video[] @relation("videoViewers")
 }
 
 model Video {
@@ -28,6 +29,7 @@ model Video {
   ownerId     Int       // Foreign key to the User model
   owner       User      @relation(fields: [ownerId], references: [id]) // This is where the relationship is established
   assignmentVideoVersions    AssignmentVideoVersion[] 
+  viewers    User[]     @relation("videoViewers") // explict access to users who can view the video
 }
 
 model Assignment {
