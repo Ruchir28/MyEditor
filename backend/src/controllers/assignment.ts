@@ -7,9 +7,8 @@ import {
   BaseResponse,
 } from "@ruchir28/common";
 import express from "express";
-import { $Enums, PrismaClient } from "@prisma/client";
-
-const primseClient = new PrismaClient();
+import { $Enums } from "@prisma/client";
+import {primsaClient} from '../Utils/prismaClient'
 export async function createAssignment(
   req: express.Request,
   res: express.Response
@@ -20,7 +19,7 @@ export async function createAssignment(
     if (!user) {
       throw new Error("User not found");
     }
-    const assignmentCreationResponse = await primseClient.assignment.create({
+    const assignmentCreationResponse = await primsaClient.assignment.create({
       data: {
         title: request.title,
         reporterId: request.reporterId,
@@ -60,7 +59,7 @@ export async function updateAssignment(
         updateData.status = $Enums.Status[request.status];
     }
     
-    const updateAssignmentResponse = await primseClient.assignment.update({
+    const updateAssignmentResponse = await primsaClient.assignment.update({
       where: {
         id: request.assignmentId,
       },
@@ -90,7 +89,7 @@ export async function getAssignments(
     if (!user) {
       throw new Error("User not found");
     }
-    const assignments = await primseClient.assignment.findMany({
+    const assignments = await primsaClient.assignment.findMany({
       where: {
         OR: [
           {

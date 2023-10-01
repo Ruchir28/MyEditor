@@ -32,6 +32,7 @@ const FileUploader: React.FC = () => {
         fetch(`${BACKEND_URL}/upload`, {
           method: "POST",
           body: formData,
+          credentials: "include",
         }).then((response) => {
           if (response.ok) {
             setUploadProgress(100);
@@ -78,6 +79,7 @@ const FileUploader: React.FC = () => {
       return fetch(`${BACKEND_URL}/upload`, {
         method: "POST",
         body: formData,
+        credentials: "include"
       }).then((response) => {
         if (response.ok) {
           console.log(`Uploaded chunk ${chunkNumber} of ${totalChunks}`);

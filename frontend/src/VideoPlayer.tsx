@@ -4,7 +4,7 @@ import ReactPlayer from 'react-player'
 
 const VideoPlayer: React.FC = () => {
 
-    const BACKEND_URL = "http://localhost:8000";
+    const BACKEND_URL = "http://localhost:8000/video";
 
     const playerRef = React.useRef<ReactPlayer>(null);
   
@@ -12,7 +12,7 @@ const VideoPlayer: React.FC = () => {
     return (
         <div>
            <ReactPlayer 
-           url={`${BACKEND_URL}/video`}
+           url={`${BACKEND_URL}/1`}
            controls={true}
            onPause={() => {
             console.log("here");

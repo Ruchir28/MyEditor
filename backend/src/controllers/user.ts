@@ -10,7 +10,7 @@ import {
 import bcrypt from "bcrypt";
 import express from "express";
 import jwt from 'jsonwebtoken';
-const primseClient = new PrismaClient();
+import {primsaClient} from '../Utils/prismaClient'
 import { Request } from 'express';
 
 
@@ -23,7 +23,7 @@ export async function registerUser(
     const request: RegisterUserRequest = req.body;
     console.log(request);
     const encrytped_password = bcrypt.hashSync(request.password, 10);
-    const userCreationResponse = await primseClient.user.create({
+    const userCreationResponse = await primsaClient.user.create({
       data: {
         email: request.email,
         encrytped_password: encrytped_password,
@@ -47,8 +47,8 @@ export async function registerUser(
 export async function loginUser(req: express.Request, res: express.Response) {
   try {
     const request: LoginUserRequest = req.body;
-
-    const user = await primseClient.user.findUnique({
+    console.log("BODY",request);
+    const user = await primsaClient.user.findUnique({
       where: {
         email: request.email,
       },
@@ -78,9 +78,18 @@ export async function loginUser(req: express.Request, res: express.Response) {
       userId: user.id,
       jwtToken: token,
     };
+    res.cookie('jwtToken', token, {
+      httpOnly: false,    // prevents the cookie from being accessed by client-side JavaScript
+      // TEMPORARILY FALSE FOR DEV
+      domain: "localhost",
+      path: "/",
+      sameSite: "lax",
+      maxAge: 3600000
+    });
 
     return res.status(200).json(loginUserResponse);
   } catch (error: unknown) {
+    console.log("ERROR",getErrorMessage(error));
     const loginUserResponse: LoginUserResponse = {
       status: RequestStatus.FAILURE,
       message: getErrorMessage(error),
@@ -91,7 +100,7 @@ export async function loginUser(req: express.Request, res: express.Response) {
 
 export async function verifyUserMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
   // checks for bearer token in the request header
-  const bearerToken = req.headers.authorization;
+  const bearerToken = req.headers.authorization || ("Bearer " + req.cookies.jwtToken);
   if(!bearerToken){
     return res.status(401).json({
       status: RequestStatus.FAILURE,
@@ -99,12 +108,15 @@ export async function verifyUserMiddleware(req: express.Request, res: express.Re
     })
   }
   const token = bearerToken.split(" ")[1];
+  console.log("DEBUG",req.cookies);
+
+  console.log("DEBUG",token);
   try{ 
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET as string);
     if(typeof decodedToken === 'string'){
       throw new Error("Invalid Token");
     }
-    const user = await primseClient.user.findUnique({
+    const user = await primsaClient.user.findUnique({
       where: {
         id: decodedToken.userId
       }
