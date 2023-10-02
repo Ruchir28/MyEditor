@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactPlayer from 'react-player'
-
+import withAuth from './Utils/withAuth';
 
 const VideoPlayer: React.FC = () => {
 
@@ -15,7 +15,6 @@ const VideoPlayer: React.FC = () => {
            url={`${BACKEND_URL}/1`}
            controls={true}
            onPause={() => {
-            console.log("here");
             console.log(playerRef.current?.getCurrentTime());
            }}
            ref={playerRef}
@@ -31,4 +30,4 @@ const VideoPlayer: React.FC = () => {
     );
 }
 
-export default VideoPlayer;
+export default withAuth(VideoPlayer);

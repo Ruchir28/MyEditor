@@ -10,9 +10,7 @@ const Login: React.FC = () => {
       email: email,
       password: password,
     };
-    console.log(data);
-    // Send to backend
-    fetch(`http://localhost:8000/user/login`, {
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/user/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -24,7 +22,6 @@ const Login: React.FC = () => {
         console.log("Login successful");
       } else {
         console.error(`Failed to login`);
-        // Additional error handling might be needed here
       }
       return response;
     });

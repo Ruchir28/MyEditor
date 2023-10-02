@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { UploadChunkResponse } from "../../common/Common";
+import withAuth from "./Utils/withAuth";
 
 const CHUNK_SIZE = 200 * 1024 * 1024; // 5MB chunks
 
-const BACKEND_URL = "http://localhost:8000/video";
+const BACKEND_URL = `${process.env.REACT_APP_BACKEND_URL}/video`;
 
 const FileUploader: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -82,7 +83,6 @@ const FileUploader: React.FC = () => {
         credentials: "include"
       }).then((response) => {
         if (response.ok) {
-          console.log(`Uploaded chunk ${chunkNumber} of ${totalChunks}`);
           setUploadProgress(
             (prevProgress) => prevProgress + (1 / totalChunks) * 100
           );
@@ -103,7 +103,6 @@ const FileUploader: React.FC = () => {
           }
         }
       }).then((response) => {
-        console.log("[DEBUG] response", response);
         return response;
       });
     }
@@ -136,6 +135,6 @@ const FileUploader: React.FC = () => {
   );
 };
 
-export default FileUploader;
+export default withAuth(FileUploader);
 
 

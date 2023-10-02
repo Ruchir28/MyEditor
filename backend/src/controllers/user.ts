@@ -12,6 +12,7 @@ import express from "express";
 import jwt from 'jsonwebtoken';
 import {primsaClient} from '../Utils/prismaClient'
 import { Request } from 'express';
+import { log } from "../Utils/Utils";
 
 
 
@@ -21,7 +22,6 @@ export async function registerUser(
 ) {
   try {
     const request: RegisterUserRequest = req.body;
-    console.log(request);
     const encrytped_password = bcrypt.hashSync(request.password, 10);
     const userCreationResponse = await primsaClient.user.create({
       data: {
@@ -47,7 +47,6 @@ export async function registerUser(
 export async function loginUser(req: express.Request, res: express.Response) {
   try {
     const request: LoginUserRequest = req.body;
-    console.log("BODY",request);
     const user = await primsaClient.user.findUnique({
       where: {
         email: request.email,
@@ -89,7 +88,6 @@ export async function loginUser(req: express.Request, res: express.Response) {
 
     return res.status(200).json(loginUserResponse);
   } catch (error: unknown) {
-    console.log("ERROR",getErrorMessage(error));
     const loginUserResponse: LoginUserResponse = {
       status: RequestStatus.FAILURE,
       message: getErrorMessage(error),
@@ -108,9 +106,6 @@ export async function verifyUserMiddleware(req: express.Request, res: express.Re
     })
   }
   const token = bearerToken.split(" ")[1];
-  console.log("DEBUG",req.cookies);
-
-  console.log("DEBUG",token);
   try{ 
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET as string);
     if(typeof decodedToken === 'string'){
@@ -138,7 +133,7 @@ export async function verifyUserMiddleware(req: express.Request, res: express.Re
 
 }
 
-export async function protectedHandler(req: express.Request, res: express.Response) {
+export async function checkAuthStatus(req: express.Request, res: express.Response) {
   return res.status(200).json({
     status: RequestStatus.SUCCESS,
     message: "Protected Route",

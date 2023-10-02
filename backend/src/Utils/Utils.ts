@@ -9,6 +9,6 @@ export function formatTime() {
     return `[${hours}]-[${minutes}]-[${seconds}]-[${milliseconds}]`;
   }
   
-  export function debug(msg: String) {
+  export function log(msg: String) {
     console.log(`[DEBUG] [SERVER] ${formatTime()} + ${msg}`);
   }

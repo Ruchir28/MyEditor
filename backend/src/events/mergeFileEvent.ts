@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import fs from "fs";
 import path from "path";
-import { debug } from "../Utils/Utils";
+import { log } from "../Utils/Utils";
 
 var appRoot = require("app-root-path");
 
@@ -14,7 +14,6 @@ export function triggerMerge(
   totalChunks: string,
   callback: (filePath: string) => void
 ) {
-  console.log("debug trigger merge");
   mergeEventEmitter.emit(MERGE_EVENT, fileName, totalChunks, callback);
 }
 
@@ -33,7 +32,6 @@ async function mergeFile(
   totalChunks: string,
   callback: (filePath: string) => void
 ) {
-  console.log("debug merge file");
   const dirPath = path.join(appRoot.path, `/uploads/${fileName}`);
 
   const finalFilePath = path.join(appRoot.path, "completed", fileName);
@@ -58,7 +56,6 @@ async function mergeFile(
         } else {
           finalizeMerge(dirPath);
           fileStream.end();
-          console.log("debug file merging finished");
           callback(finalFilePath);
         }
         return;
@@ -69,11 +66,10 @@ async function mergeFile(
       } else {
         finalizeMerge(dirPath);
         fileStream.end();
-        console.log("debug file merging finished");
         callback(finalFilePath);
       }
     } catch (error: any) {
-      debug(`Error processing chunk ${currentChunk}: ${error.message}`);
+      log(`Error processing chunk ${currentChunk}: ${error.message}`);
     }
   }
 
@@ -81,7 +77,7 @@ async function mergeFile(
     try {
       await fs.promises.rmdir(dirPath);
     } catch (error: any) {
-      debug(`Error cleaning up chunks directory: ${error.message}`);
+      log(`Error cleaning up chunks directory: ${error.message}`);
     }
   }
 

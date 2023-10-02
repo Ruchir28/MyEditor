@@ -3,12 +3,11 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { UploadChunkResponse, RequestStatus } from "@ruchir28/common";
-import { debug } from "../Utils/Utils";
+import { log } from "../Utils/Utils";
 import { triggerMerge } from "../events/mergeFileEvent";
 import { primsaClient } from "../Utils/prismaClient";
 
 var appRoot = require("app-root-path");
-console.log(appRoot.path);
 
 // Setting up Multer storage to store files in /uploads directory
 const storage = multer.diskStorage({
@@ -46,7 +45,7 @@ export async function uploadChunk(req: express.Request, res: express.Response) {
     });
   }
 
-  debug(`req.body = ${JSON.stringify(req.body)}`);
+  log(`req.body = ${JSON.stringify(req.body)}`);
 
   if (!req.file) {
     return res.status(400).json({
@@ -60,10 +59,10 @@ export async function uploadChunk(req: express.Request, res: express.Response) {
   const { originalname } = req.file;
 
   const { totalChunks, chunkNumber } = req.body;
-  debug("totalChunks:"+totalChunks);
+  log("totalChunks:"+totalChunks);
   const fileName = req.body.filename.split(".")[0];
 
-  debug(req.file.path);
+  log(req.file.path);
 
   processingChunks[fileName] = processingChunks[fileName] || new Set();
 
@@ -76,7 +75,6 @@ export async function uploadChunk(req: express.Request, res: express.Response) {
     // TODO: handle duplicate merge trigger
     triggerMerge(fileName, totalChunks, async (filePath: string) => {
       delete processingChunks[fileName];
-      console.log("DEBUG DONE PROCESSING")
       const video = await primsaClient.video.create({
         data: {
           ownerId: userID,
@@ -86,12 +84,11 @@ export async function uploadChunk(req: express.Request, res: express.Response) {
       });
     });
   }
-  debug(`resposne = ${JSON.stringify(response)}`);
+  log(`resposne = ${JSON.stringify(response)}`);
   return res.status(200).json(response);
 }
 
 export async function getVideo(req: express.Request, res: express.Response) {
-  console.log("DEBUG INSIDE HANDLER",req.params);
   const videoId = req.params["videoId"];
   if(!videoId) {
     return res.status(400).json({
@@ -99,7 +96,6 @@ export async function getVideo(req: express.Request, res: express.Response) {
       message: "Video Not Found",
     });
   }
-  console.log("DEBUG INSIDE HANDLER")
   const videoObj = await primsaClient.video.findUnique({
     where: {
       id: parseInt(videoId)
